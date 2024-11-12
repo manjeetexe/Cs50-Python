@@ -20,7 +20,7 @@ def capture_image():
 
       
         if cv2.waitKey(1) & 0xFF == ord('c'):
-            captured_image_path = 'captured_image.jpg'
+            captured_image_path = 'pht2.jpg'
             cv2.imwrite(captured_image_path, frame)
             print(f"Image captured and saved as {captured_image_path}")
             break

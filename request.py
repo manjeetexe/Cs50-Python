@@ -1,44 +1,44 @@
-import os
-import PIL.Image
-import base64
-import google.generativeai as genai
-from dotenv import load_dotenv
-import io
+import cv2
+import numpy as np
+from skimage.metrics import structural_similarity as ssim
 
-# Load environment variables (e.g., GEMINI_API_KEY)
-load_dotenv()
+# Load images
+image1 = cv2.imread('./admin/pht1.jpg')
+image2 = cv2.imread('./pht2.jpg')
 
-# Configure Gemini API
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Convert to grayscale
+gray1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
+gray2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
-# Function to convert an image to base64
-def image_to_base64(image_path):
-    with PIL.Image.open(image_path) as img:  # Open the image
-        img = img.convert("RGB")  # Convert the image to RGB (if it's not already)
-        buffered = io.BytesIO()  # Create a buffer to hold the image
-        img.save(buffered, format="JPEG")  # Save the image to the buffer
-        return base64.b64encode(buffered.getvalue()).decode('utf-8')  # Encode it to base64
+# Load pre-trained face detector
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-# Convert the admin and captured images to base64
-admin_image_base64 = image_to_base64('./admin/pht.jpg')  # Correct the relative path
-captured_image_base64 = image_to_base64('./pht2.jpg')  # If the captured image is in the root folder     # Path to your captured image
+# Detect faces in the images
+faces1 = face_cascade.detectMultiScale(gray1, 1.3, 5)
+faces2 = face_cascade.detectMultiScale(gray2, 1.3, 5)
 
-# Prepare the images to be sent to Gemini API
-image_send = [
-    {"inlineData": {"data": captured_image_base64, "mimeType": "image/jpg"}},
-    {"inlineData": {"data": admin_image_base64, "mimeType": "image/jpg"}}
-]
-
-# Send the images to the Gemini API for comparison
-try:
-    # Assuming 'generate_content' is the correct method (it may differ depending on the API)
-    result = genai.generate_content(
-        prompt="Compare these two images for authentication",
-        images=image_send
-    )
+# Check if at least one face was detected in both images
+if len(faces1) > 0 and len(faces2) > 0:
+    # Assuming you want to compare the first detected face in each image (adjust if needed)
+    x1, y1, w1, h1 = faces1[0]
+    x2, y2, w2, h2 = faces2[0]
     
-    # Print the response from Gemini
-    print("Gemini Response:", result.response.text)
-
-except Exception as e:
-    print("Error sending images to Gemini:", e)
+    # Crop the faces from the images
+    face1 = gray1[y1:y1+h1, x1:x1+w1]
+    face2 = gray2[y2:y2+h2, x2:x2+w2]
+    
+    # Resize the faces to the same size for comparison
+    face1_resized = cv2.resize(face1, (face2.shape[1], face2.shape[0]))
+    
+    # Compare the faces using structural similarity index (SSI)
+    score, _ = ssim(face1_resized, face2, full=True)
+    
+    print(f"Similarity score: {score}")
+    
+    # If similarity score is more than 0.4, print "Face match"
+    if score > 0.4:
+        print("Face match!")
+    else:
+        print("Faces do not match.")
+else:
+    print("No faces detected in one or both images.")

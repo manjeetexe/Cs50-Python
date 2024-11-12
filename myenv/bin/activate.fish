@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/Users/manjeet/Documents/GitHub/Cs50-Python/myenv"
+set -gx VIRTUAL_ENV "/Users/manjeet/Desktop/GitHub/Cs50-Python/myenv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH
